@@ -45,6 +45,10 @@ describe('createContext', () => {
     });
   });
 
+  it('Should return the `runWith` execution result', () => {
+    expect(ctx.runWith({}, () => 'some_value')).toBe('some_value');
+  });
+
   it('Should add ctxRef properties to created context', done => {
     ctx.runWith(
       {
