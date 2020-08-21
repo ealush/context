@@ -1,27 +1,91 @@
-# TSDX Bootstrap
+# Context
 
-This project was bootstrapped with [TSDX](https://github.com/jaredpalmer/tsdx).
+Simple utility that creates a multi-layerd context singleton.
+It allows you to keep reference for shared variables, and access them later down in your function call.
 
-## Local Development
+It was build for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
 
-Below is a list of commands you will probably find useful.
+You need to specify your context lookup keys in advance, so you are able to refernce them from a lower level.
 
-### `npm start` or `yarn start`
+```js
+// myContext.js
+import createContext from 'context';
 
-Runs the project in development/watch mode. Your project will be rebuilt upon changes. TSDX has a special logger for you convenience. Error messages are pretty printed and formatted for compatibility VS Code's Problems tab.
+export default createContext({
+  lookup: ['suiteId', 'group', 'test']
+});
+```
 
-<img src="https://user-images.githubusercontent.com/4060187/52168303-574d3a00-26f6-11e9-9f3b-71dbec9ebfcb.gif" width="600" />
+```js
+// framework.js
 
-Your library will be rebuilt if you make edits.
+import context from './myContext.js'
 
-### `npm run build` or `yarn build`
+function suite(id, tests) {
+  context.runWith({suiteId: id}, () => tests());
+  // ...
+}
 
-Bundles the package to the `dist` folder.
-The package is optimized and bundled with Rollup into multiple formats (CommonJS, UMD, and ES Module).
+function group(name, groupTests) {
+  const { suiteId } = context.use();
 
-<img src="https://user-images.githubusercontent.com/4060187/52168322-a98e5b00-26f6-11e9-8cf6-222d716b75ef.gif" width="600" />
+  context.runWith({
+    group: name
+  }, () => groupTests());
+}
+  
+function test(message, cb) {
+  const { suiteId, group } = context.use();
+  
+  const testId = Math.random(); // 0.8418151199238901
+  
+  const testData = context.runWith({test: testId}, () => cb())
+  
+  // ...
+}
 
-### `npm test` or `yarn test`
+export { suite, group, test } from './framework';
+```
 
-Runs the test watcher (Jest) in an interactive mode.
-By default, runs tests related to files changed since the last commit.
+```js
+import testFramework from './framwork.js';
+
+suite('some_id', () => {
+ /* 
+    context now is: 
+    {
+      suiteId: 'some_id'
+    }
+ */
+ 
+   group('some_group_name', () => {
+    /* 
+      context now is: 
+      {
+        suiteId: 'some_id',
+        childContext: {
+          group: 'some_group_name'
+        }
+      }
+     */
+
+       test('blah blah', () => {
+        /* 
+          context now is: 
+          {
+            suiteId: 'some_id',
+            childContext: {
+              group: 'some_group_name',
+              childContext: {
+                test: 0.8418151199238901
+              }
+            }
+          }
+         */
+       })
+
+   });
+
+});
+
+```
