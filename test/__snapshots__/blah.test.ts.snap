@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createContext Returns context interface 1`] = `
+Object {
+  "runWith": [Function],
+  "use": [Function],
+}
+`;
+
+exports[`createContext Should add parent and child context references to each context object 1`] = `
+Context {
+  "childContext": null,
+  "parentContext": Context {
+    "childContext": [Circular],
+    "parentContext": Context {
+      "childContext": [Circular],
+      "parentContext": Context {
+        "childContext": [Circular],
+        "parentContext": Context {
+          "childContext": [Circular],
+          "parentContext": null,
+        },
+      },
+    },
+  },
+}
+`;
