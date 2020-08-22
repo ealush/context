@@ -92,13 +92,20 @@ suite('some_id', () => {
 
 
 ## Adding default values
-You can also add a default value to a key by passing an object instead of a key name:
+You can also add a default value to a key by passing an object instead of a key name.
+
+You can either set defaultValue to be a function that returns your initial value, or to the value itself.
+Setting the value directly is not recommended for data types other than primives to prevent accitendtal mutation of the source object.
 
 ```js
 export default createContext({
   lookup: ['suiteId', 'group', {
     key: 'test'
-    defaultValue: 'some_default_test_id'
+    defaultValue: () => [/* ... */]
+  },
+{
+    key: 'example'
+    defaultValue: 100
   }]
 });
 ```

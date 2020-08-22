@@ -1,4 +1,4 @@
-import createContext, { CTX } from '../src';
+import createContext, { CTX, IContext } from '../src';
 
 const typeSafeContext = (ctx: CTX) => {
   const context = ctx.use();
@@ -13,15 +13,7 @@ describe('createContext', () => {
 
   beforeEach(() => {
     ctx = createContext({
-      lookup: [
-        'prop1',
-        'prop2',
-        'prop3',
-        {
-          key: 'prop4',
-          defaultValue: 'default_value_example',
-        },
-      ],
+      lookup: ['prop1', 'prop2', 'prop3'],
     });
   });
 
@@ -219,26 +211,87 @@ describe('createContext', () => {
   });
 
   describe('defaultValue', () => {
-    it('Returns default value when default value is not yet set', done => {
-      ctx.runWith({}, () => {
-        expect(typeSafeContext(ctx).prop4).toBe('default_value_example');
-        done();
+    describe('defaultValue is a function', () => {
+      it('Returns default value when value is not yet set', done => {
+        const ctx = createContext({
+          lookup: [
+            {
+              key: 'propx',
+              defaultValue: () => ['default_value_example'],
+            },
+          ],
+        });
+        ctx.runWith({}, () => {
+          expect(typeSafeContext(ctx).propx).toEqual(['default_value_example']);
+          done();
+        });
+      });
+
+      it('Should pass context to function as an argument', done => {
+        const ctx = createContext({
+          lookup: [
+            {
+              key: 'propx',
+              defaultValue: (context: IContext): boolean => {
+                return context === ctx.use();
+              },
+            },
+          ],
+        });
+        ctx.runWith({}, () => {
+          expect(typeSafeContext(ctx).propx).toBe(true);
+          done();
+        });
+      });
+    });
+
+    describe('defaultValue is not a function', () => {
+      it('Returns default value when value is not yet set', done => {
+        const ctx = createContext({
+          lookup: [
+            {
+              key: 'propx',
+              defaultValue: 'default_value_example',
+            },
+          ],
+        });
+        ctx.runWith({}, () => {
+          expect(typeSafeContext(ctx).propx).toBe('default_value_example');
+          done();
+        });
       });
     });
 
     it('Returns real value if set', done => {
+      const ctx = createContext({
+        lookup: [
+          {
+            key: 'propx',
+            defaultValue: 'default_value_example',
+          },
+        ],
+      });
       ctx.runWith({}, () => {
-        typeSafeContext(ctx).prop4 = 'not_a_default_value';
-        expect(typeSafeContext(ctx).prop4).toBe('not_a_default_value');
+        expect(typeSafeContext(ctx).propx).toBe('default_value_example');
+        typeSafeContext(ctx).propx = 'not_a_default_value';
+        expect(typeSafeContext(ctx).propx).toBe('not_a_default_value');
         done();
       });
     });
 
     it('Does not return default value when set to undefined', done => {
+      const ctx = createContext({
+        lookup: [
+          {
+            key: 'propx',
+            defaultValue: 'default_value_example',
+          },
+        ],
+      });
       ctx.runWith({}, () => {
-        typeSafeContext(ctx).prop4 = 'not_a_default_value';
-        typeSafeContext(ctx).prop4 = undefined;
-        expect(typeSafeContext(ctx).prop4).toBeUndefined();
+        typeSafeContext(ctx).propx = 'not_a_default_value';
+        typeSafeContext(ctx).propx = undefined;
+        expect(typeSafeContext(ctx).propx).toBeUndefined();
         done();
       });
     });

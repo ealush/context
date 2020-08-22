@@ -1,4 +1,4 @@
-interface IContext {
+export interface IContext {
   parentContext: IContext | null;
   childContext: IContext | null;
   [key: string]: any;
@@ -9,12 +9,18 @@ interface IContext {
   removeChildContext: () => void;
 }
 
-export interface CTX {
-  use(): IContext | void;
-  runWith(ctxRef: Object, fn: (context: IContext) => any): any;
+export interface ICTXFN {
+  (context: IContext): any;
 }
 
-type LookupItem = string | { key: string; defaultValue: any };
+export interface CTX {
+  use(): IContext | void;
+  runWith(ctxRef: Object, fn: ICTXFN): any;
+}
+
+type DefaultValueType = any | ICTXFN;
+
+type LookupItem = string | { key: string; defaultValue: DefaultValueType };
 
 const createContext = ({
   lookup = [],
@@ -77,7 +83,7 @@ const createContext = ({
     }
   };
 
-  const runWith = (ctxRef: Object, fn: (context: IContext) => any) => {
+  const runWith = (ctxRef: Object, fn: ICTXFN) => {
     const context = new Context(ctxRef);
 
     let res;
@@ -118,8 +124,10 @@ const createContext = ({
             typeof lookupItem !== 'string' &&
             Object.hasOwnProperty.call(lookupItem, 'defaultValue')
           ) {
-            this[innerName] = lookupItem.defaultValue;
-            return this[key];
+            return (this[key] =
+              typeof lookupItem.defaultValue === 'function'
+                ? lookupItem.defaultValue(use())
+                : lookupItem.defaultValue);
           } else {
             return;
           }
