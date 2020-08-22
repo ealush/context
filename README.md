@@ -3,7 +3,7 @@
 Simple utility that creates a multi-layerd context singleton.
 It allows you to keep reference for shared variables, and access them later down in your function call.
 
-It was build for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
+It was built for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
 
 You need to specify your context lookup keys in advance, so you are able to refernce them from a lower level.
 
