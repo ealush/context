@@ -33,14 +33,14 @@ function group(name, groupTests) {
     group: name
   }, () => groupTests());
 }
-  
+
 function test(message, cb) {
   const { suiteId, group } = context.use();
-  
+
   const testId = Math.random(); // 0.8418151199238901
-  
+
   const testData = context.runWith({test: testId}, () => cb())
-  
+
   // ...
 }
 
@@ -51,16 +51,16 @@ export { suite, group, test } from './framework';
 import testFramework from './framwork.js';
 
 suite('some_id', () => {
- /* 
-    context now is: 
+ /*
+    context now is:
     {
       suiteId: 'some_id'
     }
  */
- 
+
    group('some_group_name', () => {
-    /* 
-      context now is: 
+    /*
+      context now is:
       {
         suiteId: 'some_id',
         childContext: {
@@ -70,8 +70,8 @@ suite('some_id', () => {
      */
 
        test('blah blah', () => {
-        /* 
-          context now is: 
+        /*
+          context now is:
           {
             suiteId: 'some_id',
             childContext: {
@@ -88,4 +88,17 @@ suite('some_id', () => {
 
 });
 
+```
+
+
+## Adding default values
+You can also add a default value to a key by passing an object instead of a key name:
+
+```js
+export default createContext({
+  lookup: ['suiteId', 'group', {
+    key: 'test'
+    defaultValue: 'some_default_test_id'
+  }]
+});
 ```
