@@ -3,7 +3,7 @@ interface IContext {
   childContext: IContext | null;
   [key: string]: any;
 
-  lookup: (key: string) => any;
+  lookup: (key: string) => IContext | void;
   setParentContext: (context: IContext) => void;
   setChildContext: (context: IContext) => void;
   removeChildContext: () => void;
@@ -14,7 +14,11 @@ export interface CTX {
   runWith(ctxRef: Object, fn: (context: IContext) => any): any;
 }
 
-const createContext = ({ lookup = [] }: { lookup?: string[] } = {}): CTX => {
+type LookupItem = string | { key: string; defaultValue: any };
+
+const createContext = ({
+  lookup = [],
+}: { lookup?: LookupItem[] } = {}): CTX => {
   const storage: {
     ctx?: IContext;
   } = {
@@ -35,11 +39,11 @@ const createContext = ({ lookup = [] }: { lookup?: string[] } = {}): CTX => {
       set(this);
     }
 
-    lookup(key: string): any {
+    lookup(key: string): IContext | void {
       let ctx: IContext | null = this;
       do {
-        if (ctx[key]) {
-          return ctx[key];
+        if (ctx.hasOwnProperty(key)) {
+          return ctx;
         }
         ctx = ctx.parentContext;
       } while (ctx);
@@ -88,11 +92,40 @@ const createContext = ({ lookup = [] }: { lookup?: string[] } = {}): CTX => {
     return res;
   };
 
-  const addLookupProperty = (propertyName: string) => {
-    const innerName = `__${propertyName}`;
-    Object.defineProperty(Context.prototype, propertyName, {
+  const addLookupProperty = (lookupItem: LookupItem) => {
+    let key: string;
+
+    if (typeof lookupItem === 'string') {
+      key = lookupItem;
+    } else if (typeof lookupItem?.key === 'string') {
+      key = lookupItem.key;
+    } else {
+      return;
+    }
+
+    if (!key) {
+      return;
+    }
+
+    const innerName = `__${key}`;
+    Object.defineProperty(Context.prototype, key, {
       get: function() {
-        return this.lookup([innerName]);
+        const parentContext = this.lookup(innerName);
+
+        if (!parentContext) {
+          if (
+            lookupItem &&
+            typeof lookupItem !== 'string' &&
+            Object.hasOwnProperty.call(lookupItem, 'defaultValue')
+          ) {
+            this[innerName] = lookupItem.defaultValue;
+            return this[key];
+          } else {
+            return;
+          }
+        }
+
+        return parentContext[innerName];
       },
       set: function(value) {
         return (this[innerName] = value);

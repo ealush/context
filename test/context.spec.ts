@@ -5,7 +5,6 @@ const typeSafeContext = (ctx: CTX) => {
   if (!context) {
     throw new Error();
   }
-
   return context;
 };
 
@@ -14,7 +13,15 @@ describe('createContext', () => {
 
   beforeEach(() => {
     ctx = createContext({
-      lookup: ['prop1', 'prop2', 'prop3'],
+      lookup: [
+        'prop1',
+        'prop2',
+        'prop3',
+        {
+          key: 'prop4',
+          defaultValue: 'default_value_example',
+        },
+      ],
     });
   });
 
@@ -211,9 +218,29 @@ describe('createContext', () => {
     });
   });
 
-  it('Creates getters and setters for passed property names', () => {
-    const ctx = createContext();
+  describe('defaultValue', () => {
+    it('Returns default value when default value is not yet set', done => {
+      ctx.runWith({}, () => {
+        expect(typeSafeContext(ctx).prop4).toBe('default_value_example');
+        done();
+      });
+    });
 
-    console.log(ctx.use());
+    it('Returns real value if set', done => {
+      ctx.runWith({}, () => {
+        typeSafeContext(ctx).prop4 = 'not_a_default_value';
+        expect(typeSafeContext(ctx).prop4).toBe('not_a_default_value');
+        done();
+      });
+    });
+
+    it('Does not return default value when set to undefined', done => {
+      ctx.runWith({}, () => {
+        typeSafeContext(ctx).prop4 = 'not_a_default_value';
+        typeSafeContext(ctx).prop4 = undefined;
+        expect(typeSafeContext(ctx).prop4).toBeUndefined();
+        done();
+      });
+    });
   });
 });
