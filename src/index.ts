@@ -48,7 +48,7 @@ const createContext = ({
     lookup(key: string): IContext | void {
       let ctx: IContext | null = this;
       do {
-        if (ctx.hasOwnProperty(key)) {
+        if (Object.hasOwnProperty.call(ctx, key)) {
           return ctx;
         }
         ctx = ctx.parentContext;
@@ -129,14 +129,14 @@ const createContext = ({
                 ? lookupItem.defaultValue(use())
                 : lookupItem.defaultValue);
           } else {
-            return;
+            return undefined;
           }
         }
 
         return parentContext[innerName];
       },
       set: function(value) {
-        return (this[innerName] = value);
+        this[innerName] = value;
       },
     });
   };
