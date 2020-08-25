@@ -5,15 +5,12 @@ It allows you to keep reference for shared variables, and access them later down
 
 It was built for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
 
-You need to specify your context lookup keys in advance, so you are able to refernce them from a lower level.
 
 ```js
 // myContext.js
 import createContext from 'context';
 
-export default createContext({
-  lookup: ['suiteId', 'group', 'test']
-});
+export default createContext();
 ```
 
 ```js
@@ -22,14 +19,14 @@ export default createContext({
 import context from './myContext.js'
 
 function suite(id, tests) {
-  context.runWith({suiteId: id}, () => tests());
+  context.rn({suiteId: id}, () => tests());
   // ...
 }
 
 function group(name, groupTests) {
   const { suiteId } = context.use();
 
-  context.runWith({
+  context.rn({
     group: name
   }, () => groupTests());
 }
@@ -39,7 +36,7 @@ function test(message, cb) {
 
   const testId = Math.random(); // 0.8418151199238901
 
-  const testData = context.runWith({test: testId}, () => cb())
+  const testData = context.rn({test: testId}, () => cb())
 
   // ...
 }
@@ -88,24 +85,4 @@ suite('some_id', () => {
 
 });
 
-```
-
-
-## Adding default values
-You can also add a default value to a key by passing an object instead of a key name.
-
-You can either set defaultValue to be a function that returns your initial value, or to the value itself.
-Setting the value directly is not recommended for data types other than primives to prevent accitendtal mutation of the source object.
-
-```js
-export default createContext({
-  lookup: ['suiteId', 'group', {
-    key: 'test'
-    defaultValue: () => [/* ... */]
-  },
-{
-    key: 'example'
-    defaultValue: 100
-  }]
-});
 ```

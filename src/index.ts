@@ -1,80 +1,121 @@
-export interface IContext {
-  parentContext: IContext | null;
-  childContext: IContext | null;
-  [key: string]: any;
-
-  lookup: (key: string) => IContext | void;
-  setParentContext: (context: IContext) => void;
-  setChildContext: (context: IContext) => void;
-  removeChildContext: () => void;
-}
+type TypeCTXRef = { [key: string]: any };
 
 export interface ICTXFN {
-  (context: IContext): any;
+  (context: Context): any;
 }
 
-export interface CTX {
-  use(): IContext | void;
-  runWith(ctxRef: Object, fn: ICTXFN): any;
-}
+type ContextOptions = {
+  use: () => Context | void;
+  set: (value: any) => any;
+  queryableProperties: TQueryableProperties;
+};
 
-type DefaultValueType = any | ICTXFN;
+type TQueryableProperties = { [key: string]: true };
 
-type LookupItem = string | { key: string; defaultValue: DefaultValueType };
+const getInnerName = (name: string): string => `__${name}`;
 
-const createContext = ({
-  lookup = [],
-}: { lookup?: LookupItem[] } = {}): CTX => {
-  const storage: {
-    ctx?: IContext;
-  } = {
-    ctx: undefined,
-  };
+class Context {
+  parentContext: Context | null = null;
+  childContext: Context | null = null;
+  [key: string]: any;
 
-  class Context implements IContext {
-    parentContext: IContext['parentContext'] = null;
-    childContext: IContext['childContext'] = null;
+  constructor(
+    { use, set, queryableProperties }: ContextOptions,
+    ctxRef: TypeCTXRef
+  ) {
+    const ctx = use();
 
-    constructor(ctxRef: Object) {
-      const ctx = use();
-      Object.assign(this, ctxRef);
-      if (ctx) {
-        ctx.setChildContext(this);
-      }
-
-      set(this);
-    }
-
-    lookup(key: string): IContext | void {
-      let ctx: IContext | null = this;
-      do {
-        if (Object.hasOwnProperty.call(ctx, key)) {
-          return ctx;
+    if (ctxRef && typeof ctxRef === 'object') {
+      for (const key in queryableProperties) {
+        if (Object.prototype.hasOwnProperty.call(ctxRef, key)) {
+          this[getInnerName(key)] = ctxRef[key];
         }
+        this.addLookupProperty(key);
+      }
+    }
+
+    if (ctx) {
+      ctx.setChildContext(this);
+    }
+
+    set(this);
+  }
+
+  addLookupProperty(key: string) {
+    const innerName = getInnerName(key);
+
+    Object.defineProperty(this, key, {
+      get() {
+        return this.lookup(innerName);
+      },
+      set(value) {
+        throw new Error(
+          `Context: Unable to set "${key}" to \`${JSON.stringify(
+            value
+          )}\`. Context properties cannot be set directly. Use, use context.run() instead.`
+        );
+      },
+    });
+  }
+
+  lookup(key: string) {
+    let ctx: Context = this;
+
+    do {
+      if (ctx.hasOwnProperty(key)) {
+        return ctx[key];
+      }
+      if (ctx.parentContext instanceof Context) {
         ctx = ctx.parentContext;
-      } while (ctx);
-    }
+      }
+    } while (ctx);
+  }
 
-    setParentContext(parentContext: IContext) {
+  setParentContext(parentContext: Context) {
+    if (this instanceof Context) {
       this.parentContext = parentContext;
-    }
-
-    setChildContext(childContext: IContext) {
-      childContext.setParentContext(this);
-      this.childContext = childContext;
-    }
-
-    removeChildContext() {
-      this.childContext = null;
     }
   }
 
-  const use = () => storage.ctx;
+  setChildContext(childContext: Context) {
+    childContext.setParentContext(this);
+    this.childContext = childContext;
+  }
 
+  removeChildContext() {
+    this.childContext = null;
+  }
+}
+
+const createContext = () => {
+  const storage = {
+    ctx: undefined,
+  };
+
+  const queryableProperties: TQueryableProperties = {};
+
+  const addQueryableProperties = (ctxRef: TypeCTXRef): TQueryableProperties => {
+    if (!ctxRef || typeof ctxRef !== 'object') {
+      return {};
+    }
+
+    for (const key in ctxRef) {
+      if (Object.prototype.hasOwnProperty.call(ctxRef, key)) {
+        queryableProperties[key] = true;
+      }
+    }
+
+    return queryableProperties;
+  };
+
+  const use = (): Context | void => storage.ctx;
   const set = (value: any) => (storage.ctx = value);
-
   const clear = () => {
     const ctx = use();
+
+    if (!(ctx instanceof Context)) {
+      return;
+    }
     if (ctx?.parentContext) {
       set(ctx.parentContext);
       ctx.parentContext.removeChildContext();
@@ -82,70 +123,21 @@ const createContext = ({
       set(null);
     }
   };
-
-  const runWith = (ctxRef: Object, fn: ICTXFN) => {
-    const context = new Context(ctxRef);
+  const run = (ctxRef: TypeCTXRef, fn: ICTXFN) => {
+    const queryableProperties = addQueryableProperties(ctxRef);
+    const ctx = new Context({ set, use, queryableProperties }, ctxRef);
 
     let res;
 
-    try {
-      res = fn(context);
-    } catch {
-      /*  */
-    }
-    clear();
+    res = fn(ctx);
 
+    clear();
     return res;
   };
 
-  const addLookupProperty = (lookupItem: LookupItem) => {
-    let key: string;
-
-    if (typeof lookupItem === 'string') {
-      key = lookupItem;
-    } else if (typeof lookupItem?.key === 'string') {
-      key = lookupItem.key;
-    } else {
-      return;
-    }
-
-    if (!key) {
-      return;
-    }
-
-    const innerName = `__${key}`;
-    Object.defineProperty(Context.prototype, key, {
-      get: function() {
-        const parentContext = this.lookup(innerName);
-
-        if (!parentContext) {
-          if (
-            lookupItem &&
-            typeof lookupItem !== 'string' &&
-            Object.hasOwnProperty.call(lookupItem, 'defaultValue')
-          ) {
-            return (this[key] =
-              typeof lookupItem.defaultValue === 'function'
-                ? lookupItem.defaultValue(use())
-                : lookupItem.defaultValue);
-          } else {
-            return undefined;
-          }
-        }
-
-        return parentContext[innerName];
-      },
-      set: function(value) {
-        this[innerName] = value;
-      },
-    });
-  };
-
-  (lookup || []).forEach(name => addLookupProperty(name));
-
   return {
     use,
-    runWith,
+    run,
   };
 };
 
