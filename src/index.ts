@@ -1,152 +1,107 @@
-export interface IContext {
-  parentContext: IContext | null;
-  childContext: IContext | null;
-  [key: string]: any;
+const getInnerName = name => `__${name}`;
 
-  lookup: (key: string) => IContext | void;
-  setParentContext: (context: IContext) => void;
-  setChildContext: (context: IContext) => void;
-  removeChildContext: () => void;
-}
+class Context {
+  constructor(context, ctxRef) {
+    this.parentContext = null;
+    this.childContext = null;
 
-export interface ICTXFN {
-  (context: IContext): any;
-}
+    const ctx = context.use();
 
-export interface CTX {
-  use(): IContext | void;
-  runWith(ctxRef: Object, fn: ICTXFN): any;
-}
+    this.transformRef(ctxRef);
 
-type DefaultValueType = any | ICTXFN;
+    if (ctx) {
+      ctx.setChildContext(this);
+    }
 
-type LookupItem = string | { key: string; defaultValue: DefaultValueType };
+    context.set(this);
+  }
 
-const createContext = ({
-  lookup = [],
-}: { lookup?: LookupItem[] } = {}): CTX => {
-  const storage: {
-    ctx?: IContext;
-  } = {
-    ctx: undefined,
-  };
+  transformRef(ctxRef) {
+    if (!ctxRef || typeof ctxRef !== 'object') {
+      return;
+    }
 
-  class Context implements IContext {
-    parentContext: IContext['parentContext'] = null;
-    childContext: IContext['childContext'] = null;
-
-    constructor(ctxRef: Object) {
-      const ctx = use();
-      Object.assign(this, ctxRef);
-      if (ctx) {
-        ctx.setChildContext(this);
+    for (const key in ctxRef) {
+      if (Object.hasOwnProperty.call(ctxRef, key)) {
+        this[getInnerName(key)] = ctxRef[key];
+        this.addLookupProperty(key);
       }
-
-      set(this);
-    }
-
-    lookup(key: string): IContext | void {
-      let ctx: IContext | null = this;
-      do {
-        if (Object.hasOwnProperty.call(ctx, key)) {
-          return ctx;
-        }
-        ctx = ctx.parentContext;
-      } while (ctx);
-    }
-
-    setParentContext(parentContext: IContext) {
-      this.parentContext = parentContext;
-    }
-
-    setChildContext(childContext: IContext) {
-      childContext.setParentContext(this);
-      this.childContext = childContext;
-    }
-
-    removeChildContext() {
-      this.childContext = null;
     }
   }
 
-  const use = () => storage.ctx;
+  addLookupProperty(key) {
+    const innerName = getInnerName(key);
 
-  const set = (value: any) => (storage.ctx = value);
-
-  const clear = () => {
-    const ctx = use();
-    if (ctx?.parentContext) {
-      set(ctx.parentContext);
-      ctx.parentContext.removeChildContext();
-    } else {
-      set(null);
-    }
-  };
-
-  const runWith = (ctxRef: Object, fn: ICTXFN) => {
-    const context = new Context(ctxRef);
-
-    let res;
-
-    try {
-      res = fn(context);
-    } catch {
-      /*  */
-    }
-    clear();
-
-    return res;
-  };
-
-  const addLookupProperty = (lookupItem: LookupItem) => {
-    let key: string;
-
-    if (typeof lookupItem === 'string') {
-      key = lookupItem;
-    } else if (typeof lookupItem?.key === 'string') {
-      key = lookupItem.key;
-    } else {
-      return;
-    }
-
-    if (!key) {
-      return;
-    }
-
-    const innerName = `__${key}`;
-    Object.defineProperty(Context.prototype, key, {
-      get: function() {
-        const parentContext = this.lookup(innerName);
-
-        if (!parentContext) {
-          if (
-            lookupItem &&
-            typeof lookupItem !== 'string' &&
-            Object.hasOwnProperty.call(lookupItem, 'defaultValue')
-          ) {
-            return (this[key] =
-              typeof lookupItem.defaultValue === 'function'
-                ? lookupItem.defaultValue(use())
-                : lookupItem.defaultValue);
-          } else {
-            return undefined;
-          }
-        }
-
-        return parentContext[innerName];
+    Object.defineProperty(this, key, {
+      get() {
+        return this.lookup(innerName);
       },
-      set: function(value) {
-        this[innerName] = value;
+      set(value) {
+        throw new Error(
+          `Context: Unable to set "${key}" to \`${JSON.stringify(
+            value
+          )}\`. Context properties cannot be set directly. Use, use context.run() instead.`
+        );
       },
     });
+  }
+
+  lookup(key) {
+    let ctx = this;
+
+    do {
+      if (ctx.hasOwnProperty(key)) {
+        return ctx[key];
+      }
+      ctx = ctx.parentContext;
+    } while (ctx);
+  }
+
+  setParentContext(parentContext) {
+    this.parentContext = parentContext;
+  }
+
+  setChildContext(childContext) {
+    childContext.setParentContext(this);
+    this.childContext = childContext;
+  }
+
+  removeChildContext() {
+    this.childContext = null;
+  }
+}
+
+const createContext = () => {
+  const storage = {
+    ctx: undefined,
   };
 
-  (lookup || []).forEach(name => addLookupProperty(name));
+  const context = {
+    use: () => storage.ctx,
+    set: value => (storage.ctx = value),
+    clear: () => {
+      const ctx = context.use();
+      if (ctx?.parentContext) {
+        context.set(ctx.parentContext);
+        ctx.parentContext.removeChildContext();
+      } else {
+        context.set(null);
+      }
+    },
+    run: (ctxRef, fn) => {
+      const ctx = new Context(context, ctxRef);
+
+      let res;
+
+      res = fn(ctx);
+
+      context.clear();
+      return res;
+    },
+  };
 
   return {
-    use,
-    runWith,
+    use: context.use,
+    run: context.run,
   };
 };
-
-export default createContext;
