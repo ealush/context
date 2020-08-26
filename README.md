@@ -1,7 +1,7 @@
 # Context
 
 Simple utility that creates a multi-layerd context singleton.
-It allows you to keep reference for shared variables, and access them later down in your function call.
+It allows you to keep reference for shared variables, and access them later down in your function call even if not declared in the same scope.
 
 It was built for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
 
@@ -19,14 +19,14 @@ export default createContext();
 import context from './myContext.js'
 
 function suite(id, tests) {
-  context.rn({suiteId: id}, () => tests());
+  context.run({suiteId: id}, () => tests());
   // ...
 }
 
 function group(name, groupTests) {
   const { suiteId } = context.use();
 
-  context.rn({
+  context.run({
     group: name
   }, () => groupTests());
 }
@@ -36,7 +36,7 @@ function test(message, cb) {
 
   const testId = Math.random(); // 0.8418151199238901
 
-  const testData = context.rn({test: testId}, () => cb())
+  const testData = context.run({test: testId}, () => cb())
 
   // ...
 }
@@ -59,9 +59,9 @@ suite('some_id', () => {
     /*
       context now is:
       {
-        suiteId: 'some_id',
-        childContext: {
-          group: 'some_group_name'
+        group: 'some_group_name',
+        parentContext: {
+          suiteId: 'some_id',
         }
       }
      */
@@ -70,11 +70,11 @@ suite('some_id', () => {
         /*
           context now is:
           {
-            suiteId: 'some_id',
-            childContext: {
+            test: 0.8418151199238901,
+            parentContext: {
               group: 'some_group_name',
-              childContext: {
-                test: 0.8418151199238901
+              parentContext: {
+                suiteId: 'some_id',
               }
             }
           }
