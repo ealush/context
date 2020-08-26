@@ -1,27 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`createContext Returns context interface 1`] = `
-Object {
-  "runWith": [Function],
-  "use": [Function],
+exports[`Context Context.run Should clear context after callback run 1`] = `
+Context {
+  "childContext": null,
+  "parentContext": null,
 }
 `;
 
-exports[`createContext Should add parent and child context references to each context object 1`] = `
-Context {
-  "childContext": null,
-  "parentContext": Context {
-    "childContext": [Circular],
-    "parentContext": Context {
-      "childContext": [Circular],
-      "parentContext": Context {
-        "childContext": [Circular],
-        "parentContext": Context {
-          "childContext": [Circular],
-          "parentContext": null,
-        },
-      },
-    },
-  },
+exports[`Context createContext Should return all methods 1`] = `
+Object {
+  "run": [Function],
+  "use": [Function],
 }
 `;

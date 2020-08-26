@@ -12,12 +12,21 @@ type ContextOptions = {
 
 type TQueryableProperties = { [key: string]: true };
 
+export type TCTX = {
+  use: () => Context | void;
+  run: (ctxRef: TypeCTXRef, fn: ICTXFN) => any;
+};
+
 const getInnerName = (name: string): string => `__${name}`;
 
 class Context {
-  parentContext: Context | null = null;
-  childContext: Context | null = null;
+  private parentContext: Context | null = null;
+  private childContext: Context | null = null;
   [key: string]: any;
+
+  static is(value: any): value is Context {
+    return value instanceof Context;
+  }
 
   constructor(
     { use, set, queryableProperties }: ContextOptions,
@@ -58,32 +67,43 @@ class Context {
     });
   }
 
-  lookup(key: string) {
+  // @ts-ignore
+  private lookup(key: string) {
     let ctx: Context = this;
 
     do {
       if (ctx.hasOwnProperty(key)) {
         return ctx[key];
       }
-      if (ctx.parentContext instanceof Context) {
+      if (Context.is(ctx.parentContext)) {
         ctx = ctx.parentContext;
       }
     } while (ctx);
   }
 
-  setParentContext(parentContext: Context) {
-    if (this instanceof Context) {
+  private setParentContext(parentContext: Context) {
+    if (Context.is(this)) {
       this.parentContext = parentContext;
     }
   }
 
-  setChildContext(childContext: Context) {
+  private setChildContext(childContext: Context) {
     childContext.setParentContext(this);
     this.childContext = childContext;
+    return this.childContext;
   }
 
-  removeChildContext() {
+  private removeChildContext() {
     this.childContext = null;
+  }
+
+  clear() {
+    let next = this.parentContext ?? null;
+    if (Context.is(next)) {
+      next.removeChildContext();
+    }
+
+    return next;
   }
 }
 
@@ -113,15 +133,12 @@ const createContext = () => {
   const clear = () => {
     const ctx = use();
 
-    if (!(ctx instanceof Context)) {
+    if (!Context.is(ctx)) {
       return;
     }
-    if (ctx?.parentContext) {
-      set(ctx.parentContext);
-      ctx.parentContext.removeChildContext();
-    } else {
-      set(null);
-    }
+
+    const next = ctx.clear();
+    set(next);
   };
   const run = (ctxRef: TypeCTXRef, fn: ICTXFN) => {
     const queryableProperties = addQueryableProperties(ctxRef);
