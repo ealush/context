@@ -20,8 +20,7 @@ export type TCTX = {
 const getInnerName = (name: string): string => `__${name}`;
 
 class Context {
-  private parentContext: Context | null = null;
-  private childContext: Context | null = null;
+  private _parentContext: Context | null = null;
   [key: string]: any;
 
   static is(value: any): value is Context {
@@ -44,7 +43,7 @@ class Context {
     }
 
     if (ctx) {
-      ctx.setChildContext(this);
+      this.setParentContext(ctx);
     }
 
     set(this);
@@ -67,7 +66,7 @@ class Context {
     });
   }
 
-  // @ts-ignore
+  // @ts-ignore - we actually do use lookup
   private lookup(key: string) {
     let ctx: Context = this;
 
@@ -75,35 +74,20 @@ class Context {
       if (ctx.hasOwnProperty(key)) {
         return ctx[key];
       }
-      if (Context.is(ctx.parentContext)) {
-        ctx = ctx.parentContext;
+      if (Context.is(ctx._parentContext)) {
+        ctx = ctx._parentContext;
       }
     } while (ctx);
   }
 
   private setParentContext(parentContext: Context) {
     if (Context.is(this)) {
-      this.parentContext = parentContext;
+      this._parentContext = parentContext;
     }
   }
 
-  private setChildContext(childContext: Context) {
-    childContext.setParentContext(this);
-    this.childContext = childContext;
-    return this.childContext;
-  }
-
-  private removeChildContext() {
-    this.childContext = null;
-  }
-
-  clear() {
-    let next = this.parentContext ?? null;
-    if (Context.is(next)) {
-      next.removeChildContext();
-    }
-
-    return next;
+  get parentContext(): Context | null {
+    return this._parentContext;
   }
 }
 
@@ -137,8 +121,7 @@ const createContext = () => {
       return;
     }
 
-    const next = ctx.clear();
-    set(next);
+    set(ctx.parentContext);
   };
   const run = (ctxRef: TypeCTXRef, fn: ICTXFN) => {
     const queryableProperties = addQueryableProperties(ctxRef);

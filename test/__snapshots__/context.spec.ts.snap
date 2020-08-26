@@ -2,8 +2,7 @@
 
 exports[`Context Context.run Should clear context after callback run 1`] = `
 Context {
-  "childContext": null,
-  "parentContext": null,
+  "_parentContext": null,
 }
 `;
 
