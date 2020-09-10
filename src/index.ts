@@ -60,7 +60,7 @@ class Context {
         throw new Error(
           `Context: Unable to set "${key}" to \`${JSON.stringify(
             value
-          )}\`. Context properties cannot be set directly. Use, use context.run() instead.`
+          )}\`. Context properties cannot be set directly. Use context.run() instead.`
         );
       },
     });
