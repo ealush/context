@@ -127,9 +127,7 @@ const createContext = () => {
     const queryableProperties = addQueryableProperties(ctxRef);
     const ctx = new Context({ set, use, queryableProperties }, ctxRef);
 
-    let res;
-
-    res = fn(ctx);
+    const res = fn(ctx);
 
     clear();
     return res;
