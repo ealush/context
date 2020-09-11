@@ -3,11 +3,15 @@ type TypeCTXRef = { [key: string]: any };
 export interface ICTXFN {
   (context: Context): any;
 }
+interface Init {
+  (ctxRef?: TypeCTXRef, parentContext?: Context | void): TypeCTXRef | null;
+}
 
 type ContextOptions = {
   use: () => Context | void;
   set: (value: any) => any;
-  queryableProperties: TQueryableProperties;
+  addQueryableProperties: (ctxRef: TypeCTXRef) => TQueryableProperties;
+  init?: Init;
 };
 
 type TQueryableProperties = { [key: string]: true };
@@ -28,15 +32,20 @@ class Context {
   }
 
   constructor(
-    { use, set, queryableProperties }: ContextOptions,
+    { use, set, addQueryableProperties, init }: ContextOptions,
     ctxRef: TypeCTXRef
   ) {
     const ctx = use();
 
-    if (ctxRef && typeof ctxRef === 'object') {
+    const usedRef =
+      typeof init === 'function' ? init(ctxRef, ctx) ?? ctxRef : ctxRef;
+
+    const queryableProperties = addQueryableProperties(usedRef);
+
+    if (usedRef && typeof usedRef === 'object') {
       for (const key in queryableProperties) {
-        if (Object.prototype.hasOwnProperty.call(ctxRef, key)) {
-          this[getInnerName(key)] = ctxRef[key];
+        if (Object.prototype.hasOwnProperty.call(usedRef, key)) {
+          this[getInnerName(key)] = usedRef[key];
         }
         this.addLookupProperty(key);
       }
@@ -69,13 +78,14 @@ class Context {
   // @ts-ignore - we actually do use lookup
   private lookup(key: string) {
     let ctx: Context = this;
-
     do {
       if (ctx.hasOwnProperty(key)) {
         return ctx[key];
       }
-      if (Context.is(ctx._parentContext)) {
-        ctx = ctx._parentContext;
+      if (Context.is(ctx.parentContext)) {
+        ctx = ctx.parentContext;
+      } else {
+        return;
       }
     } while (ctx);
   }
@@ -91,7 +101,7 @@ class Context {
   }
 }
 
-const createContext = () => {
+const createContext = (init?: Init) => {
   const storage = {
     ctx: undefined,
   };
@@ -124,8 +134,7 @@ const createContext = () => {
     set(ctx.parentContext);
   };
   const run = (ctxRef: TypeCTXRef, fn: ICTXFN) => {
-    const queryableProperties = addQueryableProperties(ctxRef);
-    const ctx = new Context({ set, use, queryableProperties }, ctxRef);
+    const ctx = new Context({ set, use, addQueryableProperties, init }, ctxRef);
 
     const res = fn(ctx);
 

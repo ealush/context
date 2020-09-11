@@ -5,7 +5,6 @@ It allows you to keep reference for shared variables, and access them later down
 
 It was built for [vest](https://github.com/ealush/vest) validations frameworks, but can be used in all sort of places.
 
-
 ```js
 // myContext.js
 import createContext from 'context';
@@ -16,19 +15,22 @@ export default createContext();
 ```js
 // framework.js
 
-import context from './myContext.js'
+import context from './myContext.js';
 
 function suite(id, tests) {
-  context.run({suiteId: id}, () => tests());
+  context.run({ suiteId: id }, () => tests());
   // ...
 }
 
 function group(name, groupTests) {
   const { suiteId } = context.use();
 
-  context.run({
-    group: name
-  }, () => groupTests());
+  context.run(
+    {
+      group: name,
+    },
+    () => groupTests()
+  );
 }
 
 function test(message, cb) {
@@ -36,7 +38,7 @@ function test(message, cb) {
 
   const testId = Math.random(); // 0.8418151199238901
 
-  const testData = context.run({test: testId}, () => cb())
+  const testData = context.run({ test: testId }, () => cb());
 
   // ...
 }
@@ -48,14 +50,14 @@ export { suite, group, test } from './framework';
 import testFramework from './framwork.js';
 
 suite('some_id', () => {
- /*
+  /*
     context now is:
     {
       suiteId: 'some_id'
     }
  */
 
-   group('some_group_name', () => {
+  group('some_group_name', () => {
     /*
       context now is:
       {
@@ -66,8 +68,8 @@ suite('some_id', () => {
       }
      */
 
-       test('blah blah', () => {
-        /*
+    test('blah blah', () => {
+      /*
           context now is:
           {
             test: 0.8418151199238901,
@@ -79,10 +81,11 @@ suite('some_id', () => {
             }
           }
          */
-       })
-
-   });
-
+    });
+  });
 });
-
 ```
+
+## Context initialization
+
+You can add an init function to your context creation. The init function will run every time you call context.run, to allow you to set in-flight keys to your context. It accepts two params - the provided ctxRef, and the parent context when nested.
