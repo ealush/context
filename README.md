@@ -86,6 +86,16 @@ suite('some_id', () => {
 });
 ```
 
+## Binding a function with context
+
+You can bind a function to a context with ctx.bind, this allows you to create a bound function that's when called - will be called with that bound context, even if not in the same scope anymore.
+
+```js
+const boundFunction = ctx.bind(ctxRef, fn, ...args);
+
+boundFunction() // Will run with the context as if you run it directly within ctx.run();
+```
+
 ## Context initialization
 
 You can add an init function to your context creation. The init function will run every time you call context.run, to allow you to set in-flight keys to your context. It accepts two params - the provided ctxRef, and the parent context when nested.

@@ -19,6 +19,11 @@ type TQueryableProperties = { [key: string]: true };
 export type TCTX = {
   use: () => Context | void;
   run: (ctxRef: TypeCTXRef, fn: ICTXFN) => any;
+  bind: (
+    ctxRef: TypeCTXRef,
+    fn: (...args: any[]) => any,
+    ...args: any[]
+  ) => (...runTimeArgs: any[]) => any;
 };
 
 const getInnerName = (name: string): string => `__${name}`;
@@ -101,14 +106,14 @@ class Context {
   }
 }
 
-const createContext = (init?: Init) => {
+function createContext(init?: Init) {
   const storage = {
     ctx: undefined,
   };
 
   const queryableProperties: TQueryableProperties = {};
 
-  const addQueryableProperties = (ctxRef: TypeCTXRef): TQueryableProperties => {
+  function addQueryableProperties(ctxRef: TypeCTXRef): TQueryableProperties {
     if (!ctxRef || typeof ctxRef !== 'object') {
       return {};
     }
@@ -120,11 +125,15 @@ const createContext = (init?: Init) => {
     }
 
     return queryableProperties;
-  };
+  }
 
-  const use = (): Context | void => storage.ctx;
-  const set = (value: any) => (storage.ctx = value);
-  const clear = () => {
+  function use(): Context | void {
+    return storage.ctx;
+  }
+  function set(value: any) {
+    return (storage.ctx = value);
+  }
+  function clear() {
     const ctx = use();
 
     if (!Context.is(ctx)) {
@@ -132,20 +141,33 @@ const createContext = (init?: Init) => {
     }
 
     set(ctx.parentContext);
-  };
-  const run = (ctxRef: TypeCTXRef, fn: ICTXFN) => {
+  }
+  function run(ctxRef: TypeCTXRef, fn: ICTXFN) {
     const ctx = new Context({ set, use, addQueryableProperties, init }, ctxRef);
 
     const res = fn(ctx);
 
     clear();
     return res;
-  };
+  }
+
+  function bind(
+    ctxRef: TypeCTXRef,
+    fn: (...args: any[]) => any,
+    ...args: any[]
+  ) {
+    return function(...runTimeArgs: any[]) {
+      return run(ctxRef, function() {
+        return fn(...args, ...runTimeArgs);
+      });
+    };
+  }
 
   return {
     use,
     run,
+    bind,
   };
-};
+}
 
 export default createContext;

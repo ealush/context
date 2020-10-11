@@ -131,6 +131,70 @@ describe('Context', () => {
     });
   });
 
+  describe('context.bind', () => {
+    it('Returns a function', () => {
+      expect(typeof ctx.bind({}, jest.fn())).toBe('function');
+    });
+
+    it('Wraps the function with context', done => {
+      const fn = () => {
+        expect(ctx.use()).toMatchInlineSnapshot(`
+          Context {
+            "__value": 55,
+            "_parentContext": null,
+          }
+        `);
+        done(); // this makes sure the function actually runs
+      };
+      const bound = ctx.bind({ value: 55 }, fn);
+      bound();
+    });
+
+    it('Passes bound arguments to bound function', () => {
+      const fn = jest.fn();
+      const args = Array.from({ length: 100 }, (_, i) => `${i}`); // 1-100
+      ctx.bind({}, fn, ...args)();
+
+      expect(fn).toHaveBeenCalledWith(...args);
+    });
+
+    it('Passes runtime arguments to bound function', () => {
+      const fn = jest.fn();
+      const args = Array.from({ length: 100 }, (_, i) => `${i}`); // 1-100
+      ctx.bind({}, fn)(...args);
+
+      expect(fn).toHaveBeenCalledWith(...args);
+    });
+
+    it('passes both runtime and bound arguments to bound function', () => {
+      const fn = jest.fn();
+      const args = Array.from({ length: 100 }, (_, i) => `${i}`); // 1-100
+      ctx.bind({}, fn, ...args)(...args);
+
+      expect(fn).toHaveBeenCalledWith(...args, ...args);
+    });
+
+    it('Maintains normal context behavior when runs within context.run', done => {
+      const fn = () => {
+        expect(ctx.use()).toMatchObject({ value: 200, value2: 300 });
+        expect(ctx.use()).toMatchInlineSnapshot(`
+          Context {
+            "__value2": 300,
+            "_parentContext": Context {
+              "__value": 200,
+              "__value2": 200,
+              "_parentContext": null,
+            },
+          }
+        `);
+        done();
+      };
+
+      const bound = ctx.bind({ value2: 300 }, fn);
+      ctx.run({ value: 200, value2: 200 }, bound);
+    });
+  });
+
   describe('init argument', () => {
     it('Should run init function on every context.run', () => {
       const init = jest.fn();
