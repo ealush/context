@@ -320,14 +320,7 @@ export { counter, track };
 
 Lets see how we use this.
 
-```js
-// myContext.js
-import createContext from 'context';
 
-export default createContext();
-```
-
-# Other Examples
 ```js
 // index.js
 import { counter, track } from "./counter";
@@ -383,7 +376,14 @@ When we run dReadFile it will behave like readFile but will store the count with
 
 Since context is a singleton anywhere we run this function within our project it will keep correct track of our count. 
 
-# Examples 
+# Other Examples 
+
+```js
+// myContext.js
+import createContext from 'context';
+
+export default createContext();
+```
 ```js
 // framework.js
 
