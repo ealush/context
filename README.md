@@ -432,5 +432,3 @@ boundFunction(); // Will run with the context as if you run it directly within c
 
 You can add an init function to your context creation. The init function will run every time you call context.run, to allow you to set in-flight keys to your context. It accepts two params - the provided ctxRef, and the parent context when nested.
 
---
-Shmuel Shoshtari,
