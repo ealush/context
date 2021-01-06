@@ -200,6 +200,7 @@ function counter(func) {
     return values;
   }
 
+  const ref = { add, getVals };
   return context.bind({ ref }, func);
 }
 ```
@@ -231,7 +232,7 @@ function track(func) {
   return holder;
 }
  
-}
+
 
 ```
 
