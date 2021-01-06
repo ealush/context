@@ -43,7 +43,7 @@ function sayMyName(name) {
 
 We will be getting the same results. Right?
 
-Its the next feature that illustrates context's power.
+It's the next feature that illustrates context's power.
 Instead of using 'run'. we will use 'bind'
 
 ```js
