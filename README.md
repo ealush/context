@@ -208,7 +208,7 @@ great! wait no, this function that is returned will run our function we passed a
 
 Not what we wanted...
 
-We want a function that will run our function, have access to values but wont require us to modify our existing function.
+We want a function that will run our function, have access to values but won't require us to modify our existing function.
 
 so lets create a function called track.
 'track' will return a function that will modify values and run out function
