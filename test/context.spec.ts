@@ -1,15 +1,7 @@
-import createContext, { TCTX } from '../src';
-
-const typeSafeContext = (ctx: TCTX) => {
-  const context = ctx.use();
-  if (!context) {
-    throw new Error();
-  }
-  return context;
-};
+import createContext from '../src';
 
 describe('Context', () => {
-  let ctx: TCTX;
+  let ctx: ReturnType<typeof createContext>;
 
   beforeEach(() => {
     ctx = createContext();
@@ -45,9 +37,9 @@ describe('Context', () => {
           id: 55,
           user: 'boomsa',
         },
-        () => {
-          expect(typeSafeContext(ctx).id).toBe(55);
-          expect(typeSafeContext(ctx).user).toBe('boomsa');
+        context => {
+          expect(context.id).toBe(55);
+          expect(context.user).toBe('boomsa');
         }
       );
     });
@@ -57,9 +49,9 @@ describe('Context', () => {
         {
           id: 55,
         },
-        () => {
-          expect(typeSafeContext(ctx).id).toBe(55);
-          expect(typeSafeContext(ctx).user).toBeUndefined();
+        context => {
+          expect(context.id).toBe(55);
+          expect(context.user).toBeUndefined();
         }
       );
     });
@@ -79,24 +71,24 @@ describe('Context', () => {
             id: 99,
             name: 'watermelonbunny',
           },
-          () => {
-            expect(typeSafeContext(ctx).id).toBe(99);
-            expect(typeSafeContext(ctx).name).toBe('watermelonbunny');
+          context => {
+            expect(context.id).toBe(99);
+            expect(context.name).toBe('watermelonbunny');
 
             ctx.run(
               {
                 name: 'Emanuelle',
                 color: 'blue',
               },
-              () => {
-                expect(typeSafeContext(ctx).id).toBe(99);
-                expect(typeSafeContext(ctx).name).toBe('Emanuelle');
-                expect(typeSafeContext(ctx).color).toBe('blue');
+              context => {
+                expect(context.id).toBe(99);
+                expect(context.name).toBe('Emanuelle');
+                expect(context.color).toBe('blue');
 
-                ctx.run({}, () => {
-                  expect(typeSafeContext(ctx).id).toBe(99);
-                  expect(typeSafeContext(ctx).name).toBe('Emanuelle');
-                  expect(typeSafeContext(ctx).color).toBe('blue');
+                ctx.run({}, context => {
+                  expect(context.id).toBe(99);
+                  expect(context.name).toBe('Emanuelle');
+                  expect(context.color).toBe('blue');
                 });
               }
             );
@@ -110,21 +102,34 @@ describe('Context', () => {
             id: 99,
             name: 'watermelonbunny',
           },
-          () => {
+          context => {
             ctx.run(
               {
                 name: 'Emanuelle',
                 color: 'blue',
               },
-              () => {
+              context => {
                 ctx.run({}, () => null);
-                expect(typeSafeContext(ctx).id).toBe(99);
-                expect(typeSafeContext(ctx).name).toBe('Emanuelle');
-                expect(typeSafeContext(ctx).color).toBe('blue');
+                expect(context.id).toBe(99);
+                expect(context.name).toBe('Emanuelle');
+                expect(context.color).toBe('blue');
+                expect(context).toMatchInlineSnapshot(`
+                  Object {
+                    "color": "blue",
+                    "id": 99,
+                    "name": "Emanuelle",
+                  }
+                `);
               }
             );
-            expect(typeSafeContext(ctx).id).toBe(99);
-            expect(typeSafeContext(ctx).name).toBe('watermelonbunny');
+            expect(context.id).toBe(99);
+            expect(context.name).toBe('watermelonbunny');
+            expect(context).toMatchInlineSnapshot(`
+              Object {
+                "id": 99,
+                "name": "watermelonbunny",
+              }
+            `);
           }
         );
       });
@@ -139,9 +144,8 @@ describe('Context', () => {
     it('Wraps the function with context', done => {
       const fn = () => {
         expect(ctx.use()).toMatchInlineSnapshot(`
-          Context {
-            "__value": 55,
-            "_parentContext": null,
+          Object {
+            "value": 55,
           }
         `);
         done(); // this makes sure the function actually runs
@@ -178,13 +182,9 @@ describe('Context', () => {
       const fn = () => {
         expect(ctx.use()).toMatchObject({ value: 200, value2: 300 });
         expect(ctx.use()).toMatchInlineSnapshot(`
-          Context {
-            "__value2": 300,
-            "_parentContext": Context {
-              "__value": 200,
-              "__value2": 200,
-              "_parentContext": null,
-            },
+          Object {
+            "value": 200,
+            "value2": 300,
           }
         `);
         done();
@@ -248,7 +248,7 @@ describe('Context', () => {
     });
 
     it('When not nullish, should use init value as ctxRef', () => {
-      const ctx = createContext(() => ({
+      const ctx = createContext<{ override?: boolean; value?: string }>(() => ({
         override: true,
       }));
       ctx.run({ value: 'x' }, context => {
