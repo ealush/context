@@ -17,7 +17,9 @@ function createContext<T extends Record<string, any>>(
       ...(init?.(ctxRef, parentContext) ?? ctxRef),
     };
 
-    const res = fn(set(Object.freeze(out)));
+    const ctx = set(Object.freeze(out));
+    storage.ancestry.unshift(ctx);
+    const res = fn(ctx);
 
     clear();
     return res;
@@ -34,7 +36,6 @@ function createContext<T extends Record<string, any>>(
   }
 
   function set(value: T): T {
-    storage.ancestry.unshift(value);
     return (storage.ctx = value);
   }
 

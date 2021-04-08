@@ -58,8 +58,11 @@ describe('Context', () => {
 
     it('Should clear context after callback run', () => {
       expect(ctx.use()).toBeUndefined();
-      ctx.run({}, () => {
+      ctx.run({ a: 1 }, () => {
         expect(ctx.use()).toMatchSnapshot();
+        ctx.run({ b: 2 }, () => {
+          expect(ctx.use()).toMatchSnapshot();
+        });
       });
       expect(ctx.use()).toBeNull();
     });
