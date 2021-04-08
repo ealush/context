@@ -1,10 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Context Context.run Should clear context after callback run 1`] = `
-Context {
-  "_parentContext": null,
-}
-`;
+exports[`Context Context.run Should clear context after callback run 1`] = `Object {}`;
 
 exports[`Context createContext Should return all methods 1`] = `
 Object {
