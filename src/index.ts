@@ -1,4 +1,4 @@
-function createContext<T extends Record<string, any>>(
+export default function createContext<T extends Record<string, any>>(
   init?: (ctxRef: T, parentContext: T | void) => T | null
 ) {
   const storage: { ctx?: T; ancestry: T[] } = { ancestry: [] };
@@ -24,6 +24,7 @@ function createContext<T extends Record<string, any>>(
     clear();
     return res;
   }
+
   function bind(ctxRef: T, fn: (...args: any[]) => any, ...args: any[]) {
     return function(...runTimeArgs: any[]) {
       return run(ctxRef, function() {
@@ -31,6 +32,7 @@ function createContext<T extends Record<string, any>>(
       });
     };
   }
+
   function use() {
     return storage.ctx;
   }
@@ -44,5 +46,3 @@ function createContext<T extends Record<string, any>>(
     set(storage.ancestry[0] ?? null);
   }
 }
-
-export default createContext;
