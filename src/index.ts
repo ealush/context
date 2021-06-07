@@ -9,8 +9,8 @@ export default function createContext<T extends Record<string, any>>(
     use,
   };
 
-  function run(ctxRef: T, fn: (context: T) => any) {
-    let parentContext = use();
+  function run<R>(ctxRef: T, fn: (context: T) => R): R {
+    const parentContext = use();
 
     const out = {
       ...(parentContext ? parentContext : {}),
@@ -25,9 +25,9 @@ export default function createContext<T extends Record<string, any>>(
     return res;
   }
 
-  function bind(ctxRef: T, fn: (...args: any[]) => any, ...args: any[]) {
+  function bind<R>(ctxRef: T, fn: (...args: any[]) => R, ...args: any[]) {
     return function(...runTimeArgs: any[]) {
-      return run(ctxRef, function() {
+      return run<R>(ctxRef, function() {
         return fn(...args, ...runTimeArgs);
       });
     };
