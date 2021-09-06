@@ -1,4 +1,4 @@
-export default function createContext<T extends Record<string, any>>(
+export function createContext<T extends Record<string, any>>(
   init?: (ctxRef: T, parentContext: T | void) => T | null
 ) {
   const storage: { ctx?: T; ancestry: T[] } = { ancestry: [] };

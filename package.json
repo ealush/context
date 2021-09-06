@@ -1,8 +1,14 @@
 {
   "version": "1.1.4",
   "license": "MIT",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/context.esm.mjs",
+  "typings": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/context.esm.mjs",
+    "require": "./dist/index.js"
+  },
+  "type": "commonjs",
   "files": [
     "dist",
     "src"
@@ -31,10 +37,9 @@
   },
   "name": "context",
   "author": "ealush",
-  "module": "dist/context.esm.js",
   "devDependencies": {
     "husky": "^4.2.5",
-    "tsdx": "^0.13.2",
+    "tsdx": "^0.14.1",
     "tslib": "^2.0.1",
     "typescript": "^4.0.2"
   },

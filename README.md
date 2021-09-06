@@ -10,7 +10,7 @@ Originally built for [vest](https://github.com/ealush/vest) validation framework
 Lets take a quick look at how this would work
 
 ```js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -49,7 +49,7 @@ Instead of using 'run'. we will use 'bind'
 ```js
 // getNames.js
 
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -82,7 +82,7 @@ We can initialize createContext with a value
 ```js
 // getNames.js
 
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext((ctx, parentCtx) => {
   return Object.assign({}, ctx, { lastName: 'Smith' });
@@ -123,7 +123,7 @@ So lets start
 
 ```js
 //counter.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 ```
@@ -136,7 +136,7 @@ Just a parent function called counter.
 
 ```js
 //counter.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -148,7 +148,7 @@ I add a couple of functions add and getVals.
 
 ```js
 //counter.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -181,7 +181,7 @@ This object is accessible to the the function thanks to context.
 
 ```js
 //counter.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -246,7 +246,7 @@ Then our function will run and the result will return as if no change was ever m
 
 ```js
 //counter.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 const context = createContext();
 
@@ -342,7 +342,7 @@ Since context is a singleton anywhere we run this function within our project it
 
 ```js
 // myContext.js
-import createContext from 'context';
+import { createContext } from 'context';
 
 export default createContext();
 ```
